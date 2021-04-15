@@ -10,7 +10,7 @@ BEGIN{
   }
 
   # SEARCH
-  if ((f["method"] == "search") && \
+  if ((f["method"] == "search") &&              \
       (f["what"] || f["mat"])) {
     
     readdata()
@@ -31,7 +31,13 @@ BEGIN{
             (Mat[i] ~  f["mat"] ))
           list[i] = 1
     }
-    
+
+    # Filter
+    if (f["site"])
+      for (i in list)
+        if (Site[i] != f["site"])
+          list[i] = 0
+            
     header("Search results")
     print "<h1>Search results</h1>"
     print "<p>Query:</p><ul>"
@@ -39,19 +45,22 @@ BEGIN{
       print "<li>Desc. = <i>" f["what"] "</i></li>"
     if (f["mat"])
       print "<li>material = <i>" f["mat"] "</i></li>"
+    if (f["site"])
+      print "<li>Limit by site = <i>" f["site"] "</i></li>"
     print "</ul>"
     
     print "<table>"
-    print "<tr><th>GUID</th><th>Year</th><th>Desc.</th><th>Material</th></tr>"
+    print "<tr><th>GUID</th><th>Year</th><th>Desc.</th><th>Material</th><th>Site</th></tr>"
 
     PROCINFO["sorted_in"] = "@val_str_asc"
     for (i in What) {
       if (list[i]) {
         print "<tr>"
-        print "<td><a href=\"do?method=detail&guid=" i "\">" i "</a></td>"
+        print "<td><a href=\"do?method=detail&amp;guid=" i "\">" i "</a></td>"
         print "<td>" Year[i] "</td>"
         print "<td>" What[i] "</td>"
         print "<td>" Mat[i]  "</td>"
+        print "<td>" Site[i]  "</td>"
         print "</tr>"
       }
     }
@@ -59,7 +68,8 @@ BEGIN{
     print "<p>[ <a href=\"do\">BACK</a> ]</p>"
     footer()
   }
-  
+
+  # DETAILS
   else if ((f["method"] == "detail") && f["guid"]) {
 
     readdata()
@@ -71,14 +81,15 @@ BEGIN{
     print "<tr><td>Description:"   "</td><td style=\"font-weight:bold;\">" What[f["guid"]]    "</td></tr>"
     print "<tr><td>Material:"      "</td><td style=\"font-weight:bold;\">" Mat[f["guid"]]     "</td></tr>"
     print "<tr><td>Year:"          "</td><td>" Year[f["guid"]]    "</td></tr>"
-    print "<tr><td>Locality:"      "</td><td>" Loc[f["guid"]]     "</td></tr>"
+    print "<tr><td>Site:"          "</td><td>" Site[f["guid"]]     "</td></tr>"
+    print "<tr><td>AHRS Survey:"       "</td><td>" AHRS[f["guid"]] "</td></tr>"
+    print "<tr><td>Quad:"          "</td><td>" Loc[f["guid"]]     "</td></tr>"
     print "<tr><td>Quadrant:"      "</td><td>" Quad[f["guid"]]    "</td></tr>"
     print "<tr><td>Square:"        "</td><td>" Square[f["guid"]]    "</td></tr>"
     print "<tr><td>Stratigraphy:"  "</td><td>" Strat[f["guid"]]   "</td></tr>"
     print "<tr><td>Collected by:"  "</td><td>" Coll[f["guid"]]    "</td></tr>"
     print "<tr><td>Identified by:" "</td><td>" IDby[f["guid"]]    "</td></tr>"
     print "<tr><td>Preparator:"    "</td><td>" Prep[f["guid"]]    "</td></tr>"
-    print "<tr><td>Other IDs:"     "</td><td>" OtherID[f["guid"]] "</td></tr>"
     print "</table>"
     print "<p>[ <a href=\"https://arctos.database.museum/guid/" f["guid"] \
       "\">See on ARCTOS</a> ]</p>"
@@ -87,7 +98,8 @@ BEGIN{
     footer()
     
   }
-  
+
+  # LISTS
   else if ((f["method"] == "list") && f["term"]) {
     
     readdata()
@@ -96,7 +108,9 @@ BEGIN{
       termtext = "Description"
     else if (f["term"] == "mat")
       termtext = "Material"
-    else 
+    else if (f["term"] == "site")
+      termtext = "Site"
+    else
       termtext = "Other"
     
     header("Term list: " termtext)
@@ -106,12 +120,15 @@ BEGIN{
     PROCINFO["sorted_in"] = "@ind_str_asc"
     if (f["term"] == "what")
       for (i in WhatList)
-        print "<li><a href=\"do?method=search&what=%5E" i "%24\">" i "</a> (" \
+        print "<li><a href=\"do?method=search&amp;what=%5E" i "%24\">" i "</a> (" \
           WhatList[i] ")</li>"
     else if (f["term"] == "mat")
       for (i in MatList)
-        print "<li><a href=\"do?method=search&mat=%5E" i "%24\">" i "</a> (" \
+        print "<li><a href=\"do?method=search&amp;mat=%5E" i "%24\">" i "</a> (" \
           MatList[i] ")</li>"
+    else if (f["term"] == "site")
+      for (i in SiteList)
+        print "<li>" i " (" SiteList[i] ")</li>"
     print "<ul>"
     
     footer()
@@ -120,6 +137,8 @@ BEGIN{
 
   else {
 
+    readdata()
+
     header("Wales collections")
     
     print "<h1>Wales collections</h1>"
@@ -127,20 +146,27 @@ BEGIN{
     print "<input type=\"hidden\" name=\"method\" value=\"search\"/>"
     print "<table>"
     print "<tr><td>Description search term: "                       \
-      "(<a href=\"do?method=list&term=what\">list</a>)</td><td>"    \
+      "(<a href=\"do?method=list&amp;term=what\">list</a>)</td><td>"    \
       "<input type=\"text\" name=\"what\"/></td></tr>"
     print "<tr><td>Material search term: "                       \
-      "(<a href=\"do?method=list&term=mat\">list</a>)</td><td>"  \
+      "(<a href=\"do?method=list&amp;term=mat\">list</a>)</td><td>"  \
       "<input type=\"text\" name=\"mat\"/></td></tr>"
+    print "<tr><td>Limit by site: </td><td>"                            \
+      "<select name=\"site\" autocomplete=\"off\">"                     \
+      "<option value=\"\" selected=\"selected\"></option>"
+    PROCINFO["sorted_in"] = "@ind_str_asc"
+    for (i in SiteList)
+      print "<option value=\"" i "\">" i "</option>"
+    print "</select></td></tr>"
     print "</table>"
-    print "<p>(Enter both terms for AND; enter only one for OR.<br/>Search terms: plain text, or <a href=\"https://www.gnu.org/software/gawk/manual/gawk.html#Regexp\">regular expression</a>)</p>"
+    print "<p>Search terms: plain text, or <a href=\"https://www.gnu.org/software/gawk/manual/gawk.html#Regexp\">regular expression</a>.<br/>Entering both Description and Material terms implies AND.</p>"
     print "<br/><input type=\"submit\" value=\"Search\"/>"
     
     print "</form>"
     footer()
     
   }
-
+    
   exit 1
 }
 
@@ -153,8 +179,6 @@ function header(title) {
     "<head><title>" title "</title>"                                    \
     "<meta http-equiv=\"Content-Type\" content=\"text/html;"            \
     "charset=utf-8\" />"                                                \
-    "<link href=\"https://fonts.googleapis.com/css?family=Montserrat\" " \
-    "rel=\"stylesheet\"/>"                                              \
     "<link href=\"https://handbook.arctosdb.org/images/favicon64.png\" " \
     "rel=\"shortcut icon\" type=\"image/png\"/>"                        \
     "<style type=\"text/css\">"                                         \
@@ -174,6 +198,9 @@ function header(title) {
     "</style>"                                                          \
     "</head>\n<body>\n"                                                   \
     "<div class=\"main\">"
+
+  # "<link href=\"https://fonts.googleapis.com/css?family=Montserrat\" "  \
+  #  "rel=\"stylesheet\"/>"                                              \
 
 
 }
@@ -237,19 +264,21 @@ function readdata() {
   FS = "|"
   while((getline < "data") > 0) {
 
-    OtherID[$1] = $2
-    Year[$1]    = $3
-    What[$1]    = $4
-    Mat[$1]     = $5
-    Loc[$1]     = $6
-    Strat[$1]   = $10
-    Quad[$1]    = $11
-    Square[$1]    = $12
-    Coll[$1]    = $13
-    IDby[$1]    = $14
-    Prep[$1]    = $15
+    AHRS[$1] = $2
+    Site[$1]    = $3
+    Year[$1]    = $4
+    What[$1]    = $5
+    Mat[$1]     = $6
+    Loc[$1]     = $7
+    Strat[$1]   = $11
+    Quad[$1]    = $12
+    Square[$1]    = $13
+    Coll[$1]    = $14
+    IDby[$1]    = $15
+    Prep[$1]    = $16
 
-    WhatList[$4]++
-    MatList[$5]++
+    WhatList[$5]++
+    MatList[$6]++
+    SiteList[$3]++
   }
 }

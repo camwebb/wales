@@ -4,8 +4,15 @@
 
 BEGIN{
 
-  RS="\x04"
   DEBUG = 1
+  get("UA2020-134")
+  get("UA2020-135")
+  get("UA2020-136")
+
+}
+
+function get(accn,        cmd, json, data) {
+  print "Getting " accn > "/dev/stderr"
   
   cmd = "curl -s -X POST "                                              \
     "--data 'api_key=74B39D7C-65A5-4CA1-A396AD90F2095398' "             \
@@ -14,49 +21,52 @@ BEGIN{
     "--data 'cols=collectors,othercatalognumbers,scientific_name,"      \
     "preparators,media,identified_by,square,quadrant,"                  \
     "stratigraphic_position,materials' "                                \
-    "--data 'accn_number=UA2020-134' "                                  \
+    "--data 'accn_number=" accn "' "                                    \
     "'https://arctos.database.museum/component/api/v1/catalog.cfc'"
   
   # "--data 'guid=UAM:Herb:108928' "            \
   
   cmd | getline json
-  if (! json::from_json(json, Data)) {
+  if (! json::from_json(json, data)) {
     if (DEBUG)
-      walk_array(Data, "Data")
+      walk_array(data, "data")
     
     error("API JSON import failed!")
   }
 
-  # walk_array(Data, "Data")
+  # walk_array(data, "data")
 
   PROCINFO["sorted_in"] = "@ind_num_asc"
   OFS = "|"
-  for (i in Data["Records"]) {
-    for (j in Data["Records"][i])
-      gsub(/\|/ , ":", Data["Records"][i][j])
-    print Data["Records"][i]["guid"],                   \
-      Data["Records"][i]["othercatalognumbers"],        \
-      Data["Records"][i]["verbatim_date"],              \
-      Data["Records"][i]["scientific_name"],            \
-      Data["Records"][i]["materials"],                  \
-      Data["Records"][i]["spec_locality"],                        \
-      Data["Records"][i]["dec_lat"],                              \
-      Data["Records"][i]["dec_long"],                             \
-      Data["Records"][i]["coordinateuncertaintyinmeters"],        \
-      Data["Records"][i]["stratigraphic_position"],               \
-      Data["Records"][i]["quadrant"],                             \
-      Data["Records"][i]["square"],                               \
-      Data["Records"][i]["collectors"],                           \
-      Data["Records"][i]["identified_by"],                        \
-      Data["Records"][i]["preparators"],                          \
-      Data["Records"][i]["media"]
+  for (i in data["Records"]) {
+    for (j in data["Records"][i])
+      gsub(/\|/ , ":", data["Records"][i][j])
+    print data["Records"][i]["guid"],                       \
+      gensub(/.*AHRS \(Alaska Heritage Resources Survey\)=([^,]+),.*/, \
+             "\\1", "G", data["Records"][i]["othercatalognumbers"]),   \
+      gensub(/.*Locality ID=([^,]+),.*/, \
+             "\\1", "G", data["Records"][i]["othercatalognumbers"]),   \
+      data["Records"][i]["verbatim_date"],                  \
+      data["Records"][i]["scientific_name"],                \
+      data["Records"][i]["materials"],                            \
+      data["Records"][i]["spec_locality"],                        \
+      data["Records"][i]["dec_lat"],                              \
+      data["Records"][i]["dec_long"],                             \
+      data["Records"][i]["coordinateuncertaintyinmeters"],        \
+      data["Records"][i]["stratigraphic_position"],               \
+      data["Records"][i]["quadrant"],                             \
+      data["Records"][i]["square"],                               \
+      data["Records"][i]["collectors"],                           \
+      data["Records"][i]["identified_by"],                        \
+      data["Records"][i]["preparators"],                          \
+      data["Records"][i]["media"]
   }
   
-  if (Data["Result"] != "OK") {
-    exit 1
+  if (data ["Result"] != "OK") {
+    return 1
   }
   else
-    exit 0
+    return 0
 
 }
 
