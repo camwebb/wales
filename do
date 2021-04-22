@@ -32,12 +32,17 @@ BEGIN{
           list[i] = 1
     }
 
-    # Filter
+    # Filters
     if (f["site"])
       for (i in list)
         if (Site[i] != f["site"])
           list[i] = 0
-            
+
+    if (f["ahrs"])
+      for (i in list)
+        if (AHRS[i] != f["ahrs"])
+          list[i] = 0
+
     header("Search results")
     print "<h1>Search results</h1>"
     print "<p>Query:</p><ul>"
@@ -47,25 +52,36 @@ BEGIN{
       print "<li>material = <i>" f["mat"] "</i></li>"
     if (f["site"])
       print "<li>Limit by site = <i>" f["site"] "</i></li>"
+    if (f["ahrs"])
+      print "<li>Limit by AHRS ID = <i>" f["ahrs"] "</i></li>"
     print "</ul>"
-    
-    print "<table>"
-    print "<tr><th>GUID</th><th>Year</th><th>Desc.</th><th>Material</th><th>Site</th></tr>"
 
-    PROCINFO["sorted_in"] = "@val_str_asc"
-    for (i in What) {
-      if (list[i]) {
-        print "<tr>"
-        print "<td><a href=\"do?method=detail&amp;guid=" i "\">" i "</a></td>"
-        print "<td>" Year[i] "</td>"
-        print "<td>" What[i] "</td>"
-        print "<td>" Mat[i]  "</td>"
-        print "<td>" Site[i]  "</td>"
-        print "</tr>"
+    for (i in list)
+      nlist += list[i]
+
+    if (nlist) {
+      print "<table>"
+      print "<tr><th>ID</th><th>Description</th><th>Material</th><th>Year</th><th>Site</th><th>AHRS ID</th></tr>"
+
+      PROCINFO["sorted_in"] = "@val_str_asc"
+      for (i in What) {
+        if (list[i]) {
+          print "<tr>"
+          print "<td><a href=\"do?method=detail&amp;guid=" i "\">" gensub(/^UAM:Arc:/,"","G",i) "</a></td>"
+          print "<td><b>" What[i] "</b></td>"
+          print "<td>" Mat[i]  "</td>"
+          print "<td>" Year[i] "</td>"
+          print "<td>" Site[i]  "</td>"
+          print "<td>" AHRS[i]  "</td>"
+          print "</tr>"
+        }
       }
+      print "</table>"
     }
-    print "</table>"
-    print "<p>[ <a href=\"do\">BACK</a> ]</p>"
+    else
+      print "<p><i>No results</i></p>"
+    
+    # print "<p>[ <a href=\"do\">BACK</a> ]</p>"
     footer()
   }
 
@@ -76,8 +92,9 @@ BEGIN{
     
     header("Details: " f["guid"])
     
-    print "<h1>" f["guid"] "</h1>"
+    print "<h1>Object details</h1>"
     print "<table>"
+    print "<tr><td>GUID:"          "</td><td>" f["guid"]    "&#160;&#160;&#160;(Go to <a href=\"https://arctos.database.museum/guid/" f["guid"] "\">ARCTOS</a>)"
     print "<tr><td>Description:"   "</td><td style=\"font-weight:bold;\">" What[f["guid"]]    "</td></tr>"
     print "<tr><td>Material:"      "</td><td style=\"font-weight:bold;\">" Mat[f["guid"]]     "</td></tr>"
     print "<tr><td>Year:"          "</td><td>" Year[f["guid"]]    "</td></tr>"
@@ -91,9 +108,9 @@ BEGIN{
     print "<tr><td>Identified by:" "</td><td>" IDby[f["guid"]]    "</td></tr>"
     print "<tr><td>Preparator:"    "</td><td>" Prep[f["guid"]]    "</td></tr>"
     print "</table>"
-    print "<p>[ <a href=\"https://arctos.database.museum/guid/" f["guid"] \
-      "\">See on ARCTOS</a> ]</p>"
-    print "<p>[ <a href=\"do\">HOME</a> ]</p>"
+    # print "<p>[ <a href=\"https://arctos.database.museum/guid/" f["guid"] \
+    #   "\">See on ARCTOS</a> ]</p>"
+    # print "<p>[ <a href=\"do\">HOME</a> ]</p>"
 
     footer()
     
@@ -118,17 +135,23 @@ BEGIN{
     print "<h1>Term list: '" termtext "'</h1>"
     print "<ul>"
     PROCINFO["sorted_in"] = "@ind_str_asc"
-    if (f["term"] == "what")
+    if (f["term"] == "what") {
       for (i in WhatList)
-        print "<li><a href=\"do?method=search&amp;what=%5E" i "%24\">" i "</a> (" \
-          WhatList[i] ")</li>"
-    else if (f["term"] == "mat")
+        if (i)
+          print "<li><a href=\"do?method=search&amp;what=%5E" i "%24\">" i "</a> (" \
+            WhatList[i] ")</li>"
+    }
+    else if (f["term"] == "mat") {
       for (i in MatList)
-        print "<li><a href=\"do?method=search&amp;mat=%5E" i "%24\">" i "</a> (" \
-          MatList[i] ")</li>"
-    else if (f["term"] == "site")
+        if (i)
+          print "<li><a href=\"do?method=search&amp;mat=%5E" i "%24\">" i "</a> (" \
+            MatList[i] ")</li>"
+    }
+    else if (f["term"] == "site") {
       for (i in SiteList)
-        print "<li>" i " (" SiteList[i] ")</li>"
+        if (i)
+          print "<li>" i " (" SiteList[i] ")</li>"
+    }
     print "<ul>"
     
     footer()
@@ -139,28 +162,36 @@ BEGIN{
 
     readdata()
 
-    header("Wales collections")
+    header("Wales archaeological collections")
     
-    print "<h1>Wales collections</h1>"
+    print "<h1>Wales archaeological collections</h1>"
+    print "<p>Search the Wales archaeological collections the University of Alaska Museum of the North:</p>"
     print "<form action=\"do\">"
     print "<input type=\"hidden\" name=\"method\" value=\"search\"/>"
     print "<table>"
-    print "<tr><td>Description search term: "                       \
-      "(<a href=\"do?method=list&amp;term=what\">list</a>)</td><td>"    \
-      "<input type=\"text\" name=\"what\"/></td></tr>"
-    print "<tr><td>Material search term: "                       \
-      "(<a href=\"do?method=list&amp;term=mat\">list</a>)</td><td>"  \
-      "<input type=\"text\" name=\"mat\"/></td></tr>"
-    print "<tr><td>Limit by site: </td><td>"                            \
-      "<select name=\"site\" autocomplete=\"off\">"                     \
+    print "<tr><td>Object description:</td><td>"    \
+      "<input type=\"text\" name=\"what\"/></td><td>(<a href=\"do?method=list&amp;term=what\">list terms</a>)</td></tr>"
+    print "<tr><td>Material:</td><td>"                                  \
+      "<input type=\"text\" name=\"mat\"/></td><td>(<a href=\"do?method=list&amp;term=mat\">list terms</a>)</td></tr>"
+    print "<tr><td>Limit by site:</td><td>"                            \
+      "<select name=\"site\" autocomplete=\"off\" style=\"width:100%;\">" \
       "<option value=\"\" selected=\"selected\"></option>"
     PROCINFO["sorted_in"] = "@ind_str_asc"
     for (i in SiteList)
       print "<option value=\"" i "\">" i "</option>"
-    print "</select></td></tr>"
+    print "</select></td><td>&#160;</td></tr>"
+
+    print "<tr><td>Limit by AHRS ID: </td><td>"                            \
+      "<select name=\"ahrs\" autocomplete=\"off\" style=\"width:100%;\">"                     \
+      "<option value=\"\" selected=\"selected\"></option>"
+    PROCINFO["sorted_in"] = "@ind_str_asc"
+    for (i in AHRSList)
+      print "<option value=\"" i "\">" i "</option>"
+    print "</select></td><td>&#160;</td></tr>"
+    print "<tr><td>&#160;</td><td><input type=\"submit\" value=\"Submit\" style=\"width:100%;\"/></td><td>&#160;</td></tr>"
     print "</table>"
-    print "<p>Search terms: plain text, or <a href=\"https://www.gnu.org/software/gawk/manual/gawk.html#Regexp\">regular expression</a>.<br/>Entering both Description and Material terms implies AND.</p>"
-    print "<br/><input type=\"submit\" value=\"Search\"/>"
+    #    print "<p>Search terms: plain text, or <a href=\"https://www.gnu.org/software/gawk/manual/gawk.html#Regexp\">regular expression</a>.<br/>Entering both Description and Material terms implies AND.</p><br/>"
+    # print "<input type=\"submit\" value=\"Search\"/>"
     
     print "</form>"
     footer()
@@ -180,33 +211,50 @@ function header(title) {
     "<meta http-equiv=\"Content-Type\" content=\"text/html;"            \
     "charset=utf-8\" />"                                                \
     "<link href=\"https://handbook.arctosdb.org/images/favicon64.png\" " \
-    "rel=\"shortcut icon\" type=\"image/png\"/>"                        \
-    "<style type=\"text/css\">"                                         \
-    "body { font-size: 14px; font-family: 'Montserrat', "               \
-    "Verdana, Arial, Helvetica, sans-serif; }"                          \
-    ".main {width: 1000px; padding-top: 10px; margin-left: auto;"       \
-    "  margin-right: auto; }"                                           \
-    "h1 { padding-top:20px; }"                                          \
-    "select , option { font-size: 14px }"                               \
-    "table { border-collapse: collapse }"                               \
-    "td, th { border: 1px solid black; padding: 5px }"                  \
-    "a { color:#15358d; text-decoration:none; border-bottom-style:none }" \
-    "a:visited { color:#9f1dbc }"                                       \
-    "a:hover {color:#15358d; border-bottom-style:solid; "               \
-    "border-bottom-width:thin }"                                        \
-    ".graph { max-width: 100%; }"                                       \
-    "</style>"                                                          \
-    "</head>\n<body>\n"                                                   \
-    "<div class=\"main\">"
+    "rel=\"shortcut icon\" type=\"image/png\"/>"                        
+  # print "<style type=\"text/css\">"                                     \
+  #   "body { font-size: 14px; font-family: 'Montserrat', "               \
+  #   "Verdana, Arial, Helvetica, sans-serif; }"                          \
+  #   ".main {width: 1000px; padding-top: 10px; margin-left: auto;"       \
+  #   "  margin-right: auto; }"                                           \
+  #   "h1 { padding-top:20px; }"                                          \
+  #   "select , option { font-size: 14px }"                               \
+  #   "table { border-collapse: collapse }"                               \
+  #   "td, th { border: 1px solid black; padding: 5px }"                  \
+  #   "a { color:#15358d; text-decoration:none; border-bottom-style:none }" \
+  #   "a:visited { color:#9f1dbc }"                                       \
+  #   "a:hover {color:#15358d; border-bottom-style:solid; "               \
+  #   "border-bottom-width:thin }"                                        \
+  #   ".graph { max-width: 100%; }"                                       \
+  #   "</style>"                                                        
 
-  # "<link href=\"https://fonts.googleapis.com/css?family=Montserrat\" "  \
+  print "<link href=\"//fonts.googleapis.com/css?family=Raleway:400,300,600\" rel=\"stylesheet\" type=\"text/css\"/>"
+  
+  print "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>" \
+    "<link rel=\"stylesheet\" href=\"css/normalize.css\"/>"             \
+    "<link rel=\"stylesheet\" href=\"css/skeleton.css\"/>"              \
+    "<link rel=\"stylesheet\" href=\"css/override.css\"/>"
+
+  print "</head>\n<body>"
+  #print "<div class=\"main\">"
+
+  print "<div class=\"container\">"                 \
+    "<div class=\"row\" style=\"margin-top: 5%\">"  \
+    "<div class=\"eight columns\" >"
+
+  # "<link href=\"https://fonts.googleapis.com/css?family=Montserrat\" " \
   #  "rel=\"stylesheet\"/>"                                              \
-
 
 }
 
 function footer() {
-  print "</div>\n</body>\n</html>";
+  print "</div><div class=\"four columns\">"
+  print "<a class=\"button\" style=\"width:100%\" href=\"do\">Home</a><br/>"
+  print "<p style=\"border: 1px solid #BBB; border-radius: 4px; padding: 20px; background-color: #dbffa3;\"><b>Wales archaeological investigations</b><br/><br/>The site of Wales, Alaska, on the coast of Bering Strait, exists at a crossroads of continents and provides a rich sequence of human activity for over 1200 years. Wales was the site of ten years of recent archaeological investigations, which produced approximately 30,000 artifacts, faunal and floral remains, and sediment samples.<br/><br/>This website offers access to the Wales collections the <a href=\"https://www.uaf.edu/museum/collections/archaeo/\">University of Alaska Museum of the North</a>.</p>"
+  print "</div></div></div>"
+  
+  # print "</div>"
+  print "</body>\n</html>";
 }
 
 function urldecode(text,   hex, i, hextab, decoded, len, c, c1, c2, code) {
@@ -280,5 +328,6 @@ function readdata() {
     WhatList[$5]++
     MatList[$6]++
     SiteList[$3]++
+    AHRSList[$2]++
   }
 }
