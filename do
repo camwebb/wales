@@ -165,7 +165,7 @@ BEGIN{
     header("Wales archaeological collections")
     
     print "<h1>Wales archaeological collections</h1>"
-    print "<p>Search the Wales archaeological collections the University of Alaska Museum of the North:</p>"
+    print "<p>Search the Wales, Alaska, archaeological collections the University of Alaska Museum of the North:</p>"
     print "<form action=\"do\">"
     print "<input type=\"hidden\" name=\"method\" value=\"search\"/>"
     print "<table>"
@@ -250,7 +250,7 @@ function header(title) {
 function footer() {
   print "</div><div class=\"four columns\">"
   print "<a class=\"button\" style=\"width:100%\" href=\"do\">Home</a><br/>"
-  print "<p style=\"border: 1px solid #BBB; border-radius: 4px; padding: 20px; background-color: #dbffa3;\"><b>Wales archaeological investigations</b><br/><br/>The site of Wales, Alaska, on the coast of Bering Strait, exists at a crossroads of continents and provides a rich sequence of human activity for over 1200 years. Wales was the site of ten years of recent archaeological investigations, which produced approximately 30,000 artifacts, faunal and floral remains, and sediment samples.<br/><br/>This website offers access to the Wales collections the <a href=\"https://www.uaf.edu/museum/collections/archaeo/\">University of Alaska Museum of the North</a>.</p>"
+  print "<p style=\"border: 1px solid #BBB; border-radius: 4px; padding: 20px; background-color: #dbffa3;\">The site of Wales, Alaska, on the coast of Bering Strait, exists at a crossroads of continents and provides a rich sequence of human activity for over 1200 years. Wales was the site of ten years of recent archaeological investigations, which produced approximately 30,000 artifacts, faunal and floral remains, and sediment samples.<br/><br/>This website offers access to the Wales collections the <a href=\"https://www.uaf.edu/museum/collections/archaeo/\">University of Alaska Museum of the North</a>. Website development funded by US NSF grant <a href=\"https://www.nsf.gov/awardsearch/showAward?AWD_ID=2040323\">2040323</a>.</p>"
   print "</div></div></div>"
   
   # print "</div>"

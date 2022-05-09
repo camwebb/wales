@@ -25,7 +25,8 @@ function get(accn,        cmd, json, data) {
     "'https://arctos.database.museum/component/api/v1/catalog.cfc'"
   
   # "--data 'guid=UAM:Herb:108928' "            \
-  
+
+  RS="\x04"
   cmd | getline json
   if (! json::from_json(json, data)) {
     if (DEBUG)
@@ -41,6 +42,14 @@ function get(accn,        cmd, json, data) {
   for (i in data["Records"]) {
     for (j in data["Records"][i])
       gsub(/\|/ , ":", data["Records"][i][j])
+    media = ""
+    if (data["Records"][i]["media"]) {
+      json::from_json(data["Records"][i]["media"], m)
+      for (j in m)
+        media = media "," m[j]["MU"]
+      gsub(/^,/,"",media)
+    }
+  
     print data["Records"][i]["guid"],                       \
       gensub(/.*AHRS \(Alaska Heritage Resources Survey\)=([^,]+),.*/, \
              "\\1", "G", data["Records"][i]["othercatalognumbers"]),   \
@@ -59,7 +68,7 @@ function get(accn,        cmd, json, data) {
       data["Records"][i]["collectors"],                           \
       data["Records"][i]["identified_by"],                        \
       data["Records"][i]["preparators"],                          \
-      data["Records"][i]["media"]
+      media
   }
   
   if (data ["Result"] != "OK") {
@@ -87,3 +96,6 @@ function walk_array(arr, name,      i, s) {
     }
   }
 }
+
+
+# media is json: [{"MI":10638187,"MT":"image/jpeg","PU":"https://web.corral.tacc.utexas.edu/arctos-s3/thumbs/2021-08-02/tn_10638187.jpg","MU":"https://web.corral.tacc.utexas.edu/arctos-s3/mjackovich/2021-08-02/UA2020_134_0086_1_.JPG","MC":"image","TN":"https://web.corral.tacc.utexas.edu/arctos-s3/thumbs/2021-08-02/tn_10638187.jpg"},{"MI":10638188,"MT":"image/jpeg","PU":"https://web.corral.tacc.utexas.edu/arctos-s3/thumbs/2021-08-02/tn_10638188.jpg","MU":"https://web.corral.tacc.utexas.edu/arctos-s3/mjackovich/2021-08-02/UA2020_134_0086_2_.JPG","MC":"image","TN":"https://web.corral.tacc.utexas.edu/arctos-s3/thumbs/2021-08-02/tn_10638188.jpg"}]
