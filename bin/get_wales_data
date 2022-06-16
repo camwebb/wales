@@ -42,12 +42,15 @@ function get(accn,        cmd, json, data) {
   for (i in data["Records"]) {
     for (j in data["Records"][i])
       gsub(/\|/ , ":", data["Records"][i][j])
-    media = ""
+    media = thumb = ""
     if (data["Records"][i]["media"]) {
       json::from_json(data["Records"][i]["media"], m)
-      for (j in m)
+      for (j in m) {
         media = media "," m[j]["MU"]
+        thumb = thumb "," m[j]["PU"]
+      }
       gsub(/^,/,"",media)
+      gsub(/^,/,"",thumb)
     }
   
     print data["Records"][i]["guid"],                       \
@@ -68,7 +71,7 @@ function get(accn,        cmd, json, data) {
       data["Records"][i]["collectors"],                           \
       data["Records"][i]["identified_by"],                        \
       data["Records"][i]["preparators"],                          \
-      media
+      media, thumb
   }
   
   if (data ["Result"] != "OK") {

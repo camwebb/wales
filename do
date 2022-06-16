@@ -134,8 +134,10 @@ BEGIN{
     if (length(Media[f["guid"]]))
       for (i = 1; i <= length(Media[f["guid"]]); i++)
         print "<tr><td>Image " i ":</td>"\
-          "<td><img style=\"width:400px;border:thin silver solid;padding:10px;\" src=\"" Media[f["guid"]][i] \
-          "\"/></td></tr>"
+          "<td><a href=\"" Media[f["guid"]][i] "\" target=\"_blank\">"\
+          "<img style=\"border:thin silver solid;padding:10px;\" src=\"" \
+          Thumb[f["guid"]][i]                                           \
+          "\"/></a></td></tr>"
 
     print "</table>"
     # print "<p>[ <a href=\"https://arctos.database.museum/guid/" f["guid"] \
@@ -363,6 +365,11 @@ function readdata(   m, mn) {
       mn = split($17, m ,",")
       for (i = 1; i<=mn; i++)
         Media[$1][i]   = m[i]
+    }
+    if ($18) {
+      mn = split($18, m ,",")
+      for (i = 1; i<=mn; i++)
+        Thumb[$1][i]   = m[i]
     }
     WhatList[$5]++
     MatList[$6]++
