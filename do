@@ -43,6 +43,11 @@ BEGIN{
         if (AHRS[i] != f["ahrs"])
           list[i] = 0
 
+    if (f["img"])
+      for (i in list)
+        if (!length(Media[i]))
+          list[i] = 0
+    
     header("Search results")
     print "<h1>Search results</h1>"
     print "<p>Query:</p><ul>"
@@ -61,7 +66,7 @@ BEGIN{
 
     if (nlist) {
       print "<table>"
-      print "<tr><th>ID</th><th>Description</th><th>Material</th><th>Year</th><th>Site</th><th>AHRS ID</th></tr>"
+      print "<tr><th>ID</th><th>Description</th><th>Material</th><th>Year</th><th>Site</th><th>AHRS ID</th><th>Pics</th></tr>"
 
       PROCINFO["sorted_in"] = "@val_str_asc"
       for (i in What) {
@@ -73,6 +78,7 @@ BEGIN{
           print "<td>" Year[i] "</td>"
           print "<td>" Site[i]  "</td>"
           print "<td>" AHRS[i]  "</td>"
+          print "<td>" ((length(Media[i])) ? "✅" : "") "</td>"
           print "</tr>"
         }
       }
@@ -107,6 +113,11 @@ BEGIN{
     print "<tr><td>Collected by:"  "</td><td>" Coll[f["guid"]]    "</td></tr>"
     print "<tr><td>Identified by:" "</td><td>" IDby[f["guid"]]    "</td></tr>"
     print "<tr><td>Preparator:"    "</td><td>" Prep[f["guid"]]    "</td></tr>"
+    if (length(Media[f["guid"]]))
+      for (i = 1; i <= length(Media[f["guid"]]); i++)
+        print "<tr><td>Image " i ":</td>"\
+          "<td><img style=\"width:400px;\" src=\"" Media[f["guid"]][i] \
+          "\"/></td></tr>"
     print "</table>"
     # print "<p>[ <a href=\"https://arctos.database.museum/guid/" f["guid"] \
     #   "\">See on ARCTOS</a> ]</p>"
@@ -188,6 +199,11 @@ BEGIN{
     for (i in AHRSList)
       print "<option value=\"" i "\">" i "</option>"
     print "</select></td><td>&#160;</td></tr>"
+    
+    print "<tr><td>Only with images: </td><td>"             \
+      "<input type=\"checkbox\" name=\"img\" value=\"1\"/>"\
+      "</td><td>&#160;</td></tr>"
+    
     print "<tr><td>&#160;</td><td><input type=\"submit\" value=\"Submit\" style=\"width:100%;\"/></td><td>&#160;</td></tr>"
     print "</table>"
     #    print "<p>Search terms: plain text, or <a href=\"https://www.gnu.org/software/gawk/manual/gawk.html#Regexp\">regular expression</a>.<br/>Entering both Description and Material terms implies AND.</p><br/>"
@@ -307,7 +323,7 @@ function urldecode(text,   hex, i, hextab, decoded, len, c, c1, c2, code) {
   return decoded
 }
 
-function readdata() {
+function readdata(   m, mn) {
   
   FS = "|"
   while((getline < "data") > 0) {
@@ -324,7 +340,11 @@ function readdata() {
     Coll[$1]    = $14
     IDby[$1]    = $15
     Prep[$1]    = $16
-
+    if ($17) {
+      mn = split($17, m ,",")
+      for (i = 1; i<=mn; i++)
+        Media[$1][i]   = m[i]
+    }
     WhatList[$5]++
     MatList[$6]++
     SiteList[$3]++
