@@ -100,24 +100,43 @@ BEGIN{
     
     print "<h1>Object details</h1>"
     print "<table>"
+    
     print "<tr><td>GUID:"          "</td><td>" f["guid"]    "&#160;&#160;&#160;(Go to <a href=\"https://arctos.database.museum/guid/" f["guid"] "\">ARCTOS</a>)"
-    print "<tr><td>Description:"   "</td><td style=\"font-weight:bold;\">" What[f["guid"]]    "</td></tr>"
-    print "<tr><td>Material:"      "</td><td style=\"font-weight:bold;\">" Mat[f["guid"]]     "</td></tr>"
+
+    print (What[f["guid"]]) ?                                      \
+      ("<tr><td>Description:</td><td style=\"font-weight:bold;\">" \
+       What[f["guid"]] "</td></tr>") : ""
+
+    print (Mat[f["guid"]]) ?                                    \
+      ("<tr><td>Material:</td><td style=\"font-weight:bold;\">" \
+       Mat[f["guid"]] "</td></tr>") : ""
+
     print "<tr><td>Year:"          "</td><td>" Year[f["guid"]]    "</td></tr>"
     print "<tr><td>Site:"          "</td><td>" Site[f["guid"]]     "</td></tr>"
     print "<tr><td>AHRS Survey:"       "</td><td>" AHRS[f["guid"]] "</td></tr>"
     print "<tr><td>Quad:"          "</td><td>" Loc[f["guid"]]     "</td></tr>"
-    print "<tr><td>Quadrant:"      "</td><td>" Quad[f["guid"]]    "</td></tr>"
-    print "<tr><td>Square:"        "</td><td>" Square[f["guid"]]    "</td></tr>"
-    print "<tr><td>Stratigraphy:"  "</td><td>" Strat[f["guid"]]   "</td></tr>"
+    
+    print (Quad[f["guid"]]) ? \
+      ("<tr><td>Quadrant:</td><td>" Quad[f["guid"]]    "</td></tr>") : ""
+    
+    print (Square[f["guid"]]) ? \
+      ("<tr><td>Square:</td><td>" Square[f["guid"]] "</td></tr>") : ""
+
+    print (Strat[f["guid"]]) ?                                          \
+      ("<tr><td>Stratigraphy:" "</td><td>" Strat[f["guid"]] "</td></tr>") : ""
+
     print "<tr><td>Collected by:"  "</td><td>" Coll[f["guid"]]    "</td></tr>"
     print "<tr><td>Identified by:" "</td><td>" IDby[f["guid"]]    "</td></tr>"
-    print "<tr><td>Preparator:"    "</td><td>" Prep[f["guid"]]    "</td></tr>"
+
+    print (Prep[f["guid"]]) ?                                           \
+      ("<tr><td>Preparator:"    "</td><td>" Prep[f["guid"]] "</td></tr>") : ""
+
     if (length(Media[f["guid"]]))
       for (i = 1; i <= length(Media[f["guid"]]); i++)
         print "<tr><td>Image " i ":</td>"\
-          "<td><img style=\"width:400px;\" src=\"" Media[f["guid"]][i] \
+          "<td><img style=\"width:400px;border:thin silver solid;padding:10px;\" src=\"" Media[f["guid"]][i] \
           "\"/></td></tr>"
+
     print "</table>"
     # print "<p>[ <a href=\"https://arctos.database.museum/guid/" f["guid"] \
     #   "\">See on ARCTOS</a> ]</p>"
