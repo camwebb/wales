@@ -97,19 +97,24 @@ BEGIN{
     readdata()
     
     header("Details: " f["guid"])
+    audioheader()
     
     print "<h1>Object details</h1>"
     print "<table>"
     
     print "<tr><td>GUID:"          "</td><td>" f["guid"]    "&#160;&#160;&#160;(Go to <a href=\"https://arctos.database.museum/guid/" f["guid"] "\">ARCTOS</a>)"
 
-    print (What[f["guid"]]) ?                                      \
-      ("<tr><td>Description:</td><td style=\"font-weight:bold;\">" \
-       What[f["guid"]] "</td></tr>") : ""
+    print (What[f["guid"]]) ?                                           \
+      ("<tr><td>Description:</td><td><span style=\"font-weight:bold;\">" \
+       What[f["guid"]] "</span>"                                        \
+       ((Inu[What[f["guid"]]]) ? (" (Inupiaq: <i><a href=\"javascript:play('" Mp3[What[f["guid"]]] "b');\">" Inu[What[f["guid"]]] "</a></i>)") : "") \
+       "</td></tr>") : ""
 
     print (Mat[f["guid"]]) ?                                    \
-      ("<tr><td>Material:</td><td style=\"font-weight:bold;\">" \
-       Mat[f["guid"]] "</td></tr>") : ""
+      ("<tr><td>Material:</td><td><span style=\"font-weight:bold;\">" \
+       Mat[f["guid"]] "</span>"                                        \
+       ((Inu[Mat[f["guid"]]]) ? (" (Inupiaq: <i><a href=\"javascript:play('" Mp3[Mat[f["guid"]]] "b');\">" Inu[Mat[f["guid"]]] "</a></i>)") : "") \
+       "</td></tr>") : ""
 
     print "<tr><td>Year:"          "</td><td>" Year[f["guid"]]    "</td></tr>"
     print "<tr><td>Site:"          "</td><td>" Site[f["guid"]]     "</td></tr>"
@@ -376,4 +381,23 @@ function readdata(   m, mn) {
     SiteList[$3]++
     AHRSList[$2]++
   }
+
+  while(getline < "eng-inu") {
+    Inu[$2] = $3
+    Mp3[$2] = $1
+  }
+}
+
+function audioheader() {
+  print "<script> \
+    function play(file) {                    \
+    var a = document.createElement(\"audio\");  \
+    var s = document.createElement(\"source\"); \
+    a.appendChild(s);                           \
+    var r = document.createAttribute(\"src\");  \
+    r.value = \"mp3/\" + file + \".mp3\";                 \
+    s.setAttributeNode(r);                      \
+    a.play();                                   \
+}                                               \
+</script>"
 }
