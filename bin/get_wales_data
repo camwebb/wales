@@ -2,13 +2,32 @@
 
 @load "json"
 
-BEGIN{
+# output
+#  1 guid 
+#  2 AHRS
+#  3 Site
+#  4 Year
+#  5 What
+#  6 Mat
+#  7 Loc
+# 11 Strat
+# 12 Quad
+# 13 Square
+# 14 Coll
+# 15 IDby
+# 16 Prep
+# 17 Media
+# 18 Thumb
 
-  DEBUG = 1
+BEGIN{
+  DEBUG = 0
+  F="guid,othercatalognumbers,collectors,identified_by,preparators,"    \
+    "attributedetail,media,began_date,scientific_name,spec_locality"
+  # extract square, quadrant, stratigraphic_position, materials from attrs
+  
   get("UA2020-134")
   get("UA2020-135")
   get("UA2020-136")
-
 }
 
 function get(accn,        cmd, json, data) {
@@ -17,14 +36,10 @@ function get(accn,        cmd, json, data) {
   cmd = "curl -s -X POST "                                              \
     "--data 'api_key=74B39D7C-65A5-4CA1-A396AD90F2095398' "             \
     "--data 'method=getCatalogData' "                                   \
-    "--data 'pgsz=5000' "                                                 \
-    "--data 'cols=collectors,othercatalognumbers,scientific_name,"      \
-    "preparators,media,identified_by,square,quadrant,"                  \
-    "stratigraphic_position,materials' "                                \
-    "--data 'accn_number=" accn "' "                                    \
-    "'https://arctos.database.museum/component/api/v1/catalog.cfc'"
-  
-  # "--data 'guid=UAM:Herb:108928' "            \
+    "--data 'length=100' "                                              \
+    "--data 'cols=" F "' "                                              \
+    "--data 'accn_number=" accn "' "                                \
+    "'https://arctos.database.museum/component/api/v2/catalog.cfc'"
 
   RS="\x04"
   cmd | getline json
@@ -36,50 +51,91 @@ function get(accn,        cmd, json, data) {
   }
 
   # walk_array(data, "data")
+  # exit
 
-  PROCINFO["sorted_in"] = "@ind_num_asc"
-  OFS = "|"
-  for (i in data["Records"]) {
-    for (j in data["Records"][i])
-      gsub(/\|/ , ":", data["Records"][i][j])
-    media = thumb = ""
-    if (data["Records"][i]["media"]) {
-      json::from_json(data["Records"][i]["media"], m)
-      for (j in m) {
-        media = media "," m[j]["MU"]
-        thumb = thumb "," m[j]["PU"]
-      }
-      gsub(/^,/,"",media)
-      gsub(/^,/,"",thumb)
-    }
-  
-    print data["Records"][i]["guid"],                       \
-      gensub(/.*AHRS \(Alaska Heritage Resources Survey\)=([^,]+),.*/, \
-             "\\1", "G", data["Records"][i]["othercatalognumbers"]),   \
-      gensub(/.*Locality ID=([^,]+),.*/, \
-             "\\1", "G", data["Records"][i]["othercatalognumbers"]),   \
-      data["Records"][i]["verbatim_date"],                  \
-      data["Records"][i]["scientific_name"],                \
-      data["Records"][i]["materials"],                            \
-      data["Records"][i]["spec_locality"],                        \
-      data["Records"][i]["dec_lat"],                              \
-      data["Records"][i]["dec_long"],                             \
-      data["Records"][i]["coordinateuncertaintyinmeters"],        \
-      data["Records"][i]["stratigraphic_position"],               \
-      data["Records"][i]["quadrant"],                             \
-      data["Records"][i]["square"],                               \
-      data["Records"][i]["collectors"],                           \
-      data["Records"][i]["identified_by"],                        \
-      data["Records"][i]["preparators"],                          \
-      media, thumb
-  }
-  
-  if (data ["Result"] != "OK") {
-    return 1
+  if (data["tbl"]) {
+    table = data["tbl"]
+    size = data["recordsTotal"]
   }
   else
-    return 0
+    exit 1
+  
+  for (req = 1; req <= size ; req += 100) {
+    print "  part " req " of " size " recs" > "/dev/stderr"
+    
+    cmd = "curl -s -X POST "                                            \
+      "--data 'api_key=74B39D7C-65A5-4CA1-A396AD90F2095398' "           \
+      "--data 'method=getCatalogData' "                                 \
+      "--data 'tbl=" table "' "                                         \
+      "--data 'srt=guid' "                                              \
+      "--data 'start= " req "' "                                        \
+      "--data 'length=100' "                                            \
+      "'https://arctos.database.museum/component/api/v2/catalog.cfc'"
+    
+    # print cmd > "/dev/stderr"
+    
+    RS="\x04"
+    cmd | getline json
+    if (! json::from_json(json, data)) {
+      if (DEBUG)
+        walk_array(data, "data")
+      error("API JSON import failed!")
+    }
+    
+    PROCINFO["sorted_in"] = "@ind_num_asc"
+    OFS = "|"
+    for (i in data["DATA"]["DATA"]) {
+      # fix pipes
+      for (j in data["DATA"]["DATA"][i])
+        gsub(/\|/ , ":", data["DATA"]["DATA"][i][j])
 
+      # get media
+      media = thumb = ""
+      if (data["DATA"]["DATA"][i][8]) {
+        json::from_json(data["DATA"]["DATA"][i][8], m)
+        for (j in m) {
+          media = media "," m[j]["MU"]
+          thumb = thumb "," m[j]["PU"]
+        }
+        gsub(/^,/,"",media)
+        gsub(/^,/,"",thumb)
+      }
+
+      # get attributes
+      if (data["DATA"]["DATA"][i][7]) {
+        json::from_json(data["DATA"]["DATA"][i][7], m)
+        for (j in m) {
+          att[m[j]["attribute_type"]] = att[m[j]["attribute_type"]] \
+            m[j]["attribute_value"] ", "
+        }
+      }
+
+      ahrs = (data["DATA"]["DATA"][i][3] ~                              \
+              /AHRS \(Alaska Heritage Resources Survey\) [A-Z]+-[0-9]+/) ? \
+        gensub(/.*AHRS \(Alaska Heritage Resources Survey\) ([^ ]+).*/, \
+               "\\1", "G", data["DATA"]["DATA"][i][3]) : ""
+      loc = (data["DATA"]["DATA"][i][3] ~ /Locality ID ([^:]+)/) ?      \
+        gensub(/.*Locality ID ([^:]+).*/,                               \
+               "\\1", "G", data["DATA"]["DATA"][i][3]) : ""
+      
+      print data["DATA"]["DATA"][i][2],                                 \
+        ahrs, loc,                                                      \
+        substr(data["DATA"]["DATA"][i][9],1,4),                         \
+        data["DATA"]["DATA"][i][10],                                    \
+        gensub(/, $/,"","G",att["materials"]),                         \
+        data["DATA"]["DATA"][i][11],                                    \
+        "" , "" , "",                                                   \
+        gensub(/, $/,"","G",att["stratigraphic position"]),            \
+        gensub(/, $/,"","G",att["quadrant"]),                          \
+        gensub(/, $/,"","G",att["square"]),                            \
+        data["DATA"]["DATA"][i][4],                                     \
+        data["DATA"]["DATA"][i][5],                                     \
+        data["DATA"]["DATA"][i][6],                                     \
+        media, thumb
+
+      delete att
+    }
+  }
 }
 
 
@@ -101,4 +157,3 @@ function walk_array(arr, name,      i, s) {
 }
 
 
-# media is json: [{"MI":10638187,"MT":"image/jpeg","PU":"https://web.corral.tacc.utexas.edu/arctos-s3/thumbs/2021-08-02/tn_10638187.jpg","MU":"https://web.corral.tacc.utexas.edu/arctos-s3/mjackovich/2021-08-02/UA2020_134_0086_1_.JPG","MC":"image","TN":"https://web.corral.tacc.utexas.edu/arctos-s3/thumbs/2021-08-02/tn_10638187.jpg"},{"MI":10638188,"MT":"image/jpeg","PU":"https://web.corral.tacc.utexas.edu/arctos-s3/thumbs/2021-08-02/tn_10638188.jpg","MU":"https://web.corral.tacc.utexas.edu/arctos-s3/mjackovich/2021-08-02/UA2020_134_0086_2_.JPG","MC":"image","TN":"https://web.corral.tacc.utexas.edu/arctos-s3/thumbs/2021-08-02/tn_10638188.jpg"}]
