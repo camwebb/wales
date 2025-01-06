@@ -354,11 +354,11 @@ function readdata(   m, mn) {
   FS = "|"
   while((getline < "data") > 0) {
 
-    AHRS[$1] = $2
+    AHRS[$1]    = $2
     Site[$1]    = $3
     Year[$1]    = $4
-    What[$1]    = $5
-    Mat[$1]     = $6
+    What[$1]    = tolower($5)
+    Mat[$1]     = tolower($6)
     Loc[$1]     = $7
     Strat[$1]   = $11
     Quad[$1]    = $12
@@ -376,8 +376,8 @@ function readdata(   m, mn) {
       for (i = 1; i<=mn; i++)
         Thumb[$1][i]   = m[i]
     }
-    WhatList[$5]++
-    MatList[$6]++
+    WhatList[tolower($5)]++
+    MatList[tolower($6)]++
     SiteList[$3]++
     AHRSList[$2]++
   }
